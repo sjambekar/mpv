@@ -478,7 +478,19 @@ static int reconfig(struct vo *vo, struct mp_image_params *params)
     VdpStatus vdp_st;
 
     if (!check_preemption(vo))
-        return -1;
+    {
+        /*
+         * When prempted, return immediately without
+         * reconfiguring the vo_window and without
+         * initializing the vdpau objects. When recovered
+         * from preemption, the check_preemption() is called
+         * from the draw_frame() and flip_page(). When the
+         * VD thread parameters and the VO thread parameters
+         * differ, the reconfig() is triggered again, which
+         * leads to the check_preemption() call.
+         */
+        return 0;
+    }
 
     VdpChromaType chroma_type = VDP_CHROMA_TYPE_420;
     mp_vdpau_get_format(params->imgfmt, &chroma_type, NULL);
