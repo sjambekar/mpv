@@ -478,7 +478,29 @@ static int reconfig(struct vo *vo, struct mp_image_params *params)
     VdpStatus vdp_st;
 
     if (!check_preemption(vo))
-        return -1;
+    {
+      /*
+       * The -1 returned in the earlier case gives out the
+       * message that preemption is an error. However, 
+       * preemption is not an error. When VT switch out
+       * is triggered, the check_preemption() checks for
+       * the terminal on which the X is running, and because
+       * of preemption, the terminal on which X is running
+       * is switched out to the terminal on which X is not
+       * running. Hence, check_preemption() returns
+       * FALSE in this case. This cannot be considered as
+       * an error.
+       *
+       * When the VT switch in is triggered, the terminal on
+       * which X is runnig is back again, hence, the
+       * check_preemption() returns TRUE this time and
+       * hence the preemption is recovered and everything is
+       * back to normal again. Please note that the
+       * check_preemption() is called from a flip_page()
+       * in the case of VT switch in.
+       */
+        return 0;
+    }
 
     VdpChromaType chroma_type = VDP_CHROMA_TYPE_420;
     mp_vdpau_get_format(params->imgfmt, &chroma_type, NULL);
